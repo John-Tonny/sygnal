@@ -299,7 +299,6 @@ class GcmPushkin(ConcurrencyLimitedPushkin):
 
     async def _dispatch_notification_unlimited(self, n, device, context):
         log = NotificationLoggerAdapter(logger, {"request_id": context.request_id})
-
         pushkeys = [
             device.pushkey for device in n.devices if device.app_id == self.name
         ]
@@ -330,6 +329,9 @@ class GcmPushkin(ConcurrencyLimitedPushkin):
             body = self.base_request_body.copy()
             body["data"] = data
             body["priority"] = "normal" if n.prio == "low" else "high"
+            body["notification"] = {}
+            body["notification"]["title"] = u"链聊通知"
+            # body["notification"]["body"] = data["content"]["body"]
 
             for retry_number in range(0, MAX_TRIES):
                 if len(pushkeys) == 1:
@@ -338,6 +340,10 @@ class GcmPushkin(ConcurrencyLimitedPushkin):
                     body["registration_ids"] = pushkeys
 
                 log.info("Sending (attempt %i) => %r", retry_number, pushkeys)
+                
+                log.info("header %s", headers)
+                log.info("body %s", body)
+                log.info("device %s", device)
 
                 try:
                     span_tags = {"retry_num": retry_number}
